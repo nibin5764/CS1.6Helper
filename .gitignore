@@ -1,0 +1,10 @@
+*.user
+*.lib
+*.suo
+*.ncb
+Win32
+Debug
+Release
+*.obj
+*.htm
+*.aps
