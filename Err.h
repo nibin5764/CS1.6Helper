@@ -1,0 +1,6 @@
+
+
+#define  HELPER_ERROR_SUCCESS			0
+
+
+#define  HELPER_ERROR_BUFFER_TOO_SMALL	0x1001

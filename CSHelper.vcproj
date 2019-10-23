@@ -236,6 +236,10 @@
 				>
 			</File>
 			<File
+				RelativePath=".\Err.h"
+				>
+			</File>
+			<File
 				RelativePath=".\MemoryOperate.h"
 				>
 			</File>
@@ -280,5 +284,9 @@
 		</File>
 	</Files>
 	<Globals>
+		<Global
+			Name="RESOURCE_FILE"
+			Value="CSHelper.rc"
+		/>
 	</Globals>
 </VisualStudioProject>

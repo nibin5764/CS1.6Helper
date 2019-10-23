@@ -38,7 +38,7 @@ int  byteToHexStr(unsigned char byte_arr[],int arr_len, char* HexStr,int* HexStr
 			hex2=(char)(48+v2);
 		else
 			hex2=(char)(55+v2);
-		if(HexStrLen<=i){
+		if(*HexStrLen<=i){
 			return -1;
 		}
 		HexStr[index++] = hex1;
@@ -46,4 +46,16 @@ int  byteToHexStr(unsigned char byte_arr[],int arr_len, char* HexStr,int* HexStr
 	}
 	*HexStrLen = index;
 	return 0 ;
+}
+
+
+
+int Reverse4Byte(BYTE* _4Byte){
+	_4Byte[0] ^= _4Byte[3];
+	_4Byte[3] ^= _4Byte[0];
+	_4Byte[0] ^= _4Byte[3];
+	_4Byte[1] ^= _4Byte[2];
+	_4Byte[2] ^= _4Byte[1];
+	_4Byte[1] ^= _4Byte[2];
+	return 0;
 }

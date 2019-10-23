@@ -27,5 +27,17 @@ protected:
 	virtual BOOL OnInitDialog();
 	afx_msg void OnPaint();
 	afx_msg HCURSOR OnQueryDragIcon();
+	afx_msg LONG OnHotKey(WPARAM wPARAM, LPARAM lPARAM);
+	afx_msg void OnOk();
+	afx_msg void OnCancel();
+	void OnTimer(UINT_PTR nIDEvent);
 	DECLARE_MESSAGE_MAP()
+
+private:
+	BOOL IsLockHealth;
+	HANDLE proHandle;			//目标进程句柄
+	int func_LockHealth();
+
+public:
+	afx_msg void OnBnClickedBtnLockHealth();
 };
