@@ -20,15 +20,17 @@
 
 
 //定时器消息
-#define		CONNECT_PROCESS		0x2000	
-#define		TIMER_LOCK_HEALTH	0x2001
+#define		TIMER_CONNECT_PROCESS		0x2000	
+#define		TIMER_LOCK_HEALTH			0x2001
 
 //定时器触发时间
 
+#define		ELAPSE_TIMER_5000MS 5000
+#define		ELAPSE_TIMER_1000MS 1000
 #define		ELAPSE_TIMER_500MS	500
 #define		ELAPSE_TIMER_200MS	200
 #define		ELAPSE_TIMER_100MS	100
-#define		ELAPSE_TIMER_NOMAL	ELAPSE_TIMER_500MS
+#define		ELAPSE_TIMER_NOMAL	ELAPSE_TIMER_5000MS
 
 
 CCSHelperDlg::CCSHelperDlg(CWnd* pParent /*=NULL*/)
@@ -50,6 +52,7 @@ BEGIN_MESSAGE_MAP(CCSHelperDlg, CDialog)
 	ON_MESSAGE(WM_HOTKEY,OnHotKey)
 	//}}AFX_MSG_MAP
 	ON_BN_CLICKED(IDC_BTN_LOCK_HEALTH, &CCSHelperDlg::OnBnClickedBtnLockHealth)
+	ON_BN_CLICKED(IDC_BTN_START, &CCSHelperDlg::OnBnClickedBtnStart)
 END_MESSAGE_MAP()
 
 
@@ -112,24 +115,79 @@ HCURSOR CCSHelperDlg::OnQueryDragIcon()
 void CCSHelperDlg::OnBnClickedBtnLockHealth()
 {
 	if(!IsLockHealth){	//如果功能未开启
+		IsLockHealth = TRUE;
+		GetDlgItem(IDC_BTN_LOCK_HEALTH)->SetWindowText("功能已开启");
 		SetTimer(TIMER_LOCK_HEALTH,ELAPSE_TIMER_NOMAL,NULL);
 	}
 	else{
+		IsLockHealth = FALSE;
+		GetDlgItem(IDC_BTN_LOCK_HEALTH)->SetWindowText("功能已关闭");
 		KillTimer(TIMER_LOCK_HEALTH);
 	}
 	return ;
 }
-int CCSHelperDlg::func_LockHealth(){
-	list<DWORD> mlist;
-	mlist.push_front(0x160);
 
-	BYTE beHealth[4] = {0,0,0,255};
-	ULONG WrittenLen = 0;
-	int rv = 0;
-	rv = mem_WriteBlock(proHandle,0,mlist,4,beHealth,&WrittenLen);
-	if( rv != HELPER_ERROR_SUCCESS){
+
+int CCSHelperDlg::func_LockHealth(){
+// 	list<DWORD> mlist;
+// 	mlist.push_front(0x160);
+// 
+// 	BYTE beHealth[4] = {0,0,0,255};
+// 	ULONG WrittenLen = 0;
+// 	int rv = 0;
+// 	rv = mem_WriteBlock(proHandle,0,mlist,4,beHealth,&WrittenLen);
+// 	if( rv != HELPER_ERROR_SUCCESS){
+// 		return rv;
+// 	}
+	int rv;
+// 	list<DWORD> mlist;
+// 	mlist.push_back(0x1651A0);
+// 	mlist.push_back(0x78);
+	BYTE ReadBuffer[10] = {0};
+	ULONG ReadddLen = sizeof(ReadBuffer);
+// 	rv = mem_ReadBlock(proHandle,baseAddr,mlist,4,ReadBuffer,&ReadddLen);
+// 	if(rv != 0){
+// 		return rv;
+// 	}
+
+	int Result = 0;
+	//memcpy((void*)&Result,ReadBuffer,4);
+
+
+	Result = 1000;
+	memcpy(ReadBuffer,(void*)&Result,4);
+	list<DWORD> wlist;
+	wlist.push_back(0x1651A0);
+	wlist.push_back(0x78);
+	rv = mem_WriteBlock(proHandle,baseAddr,wlist,4,ReadBuffer,&ReadddLen);
+	if(rv != 0){
 		return rv;
 	}
+	return 0;
+}
+
+
+int CCSHelperDlg::func_ConnectPro(){
+	//获取目标进程窗口句柄
+	hWindow = FindWindow("#32770", "HelperTest")->GetSafeHwnd();
+	ASSERT_HANDLE_NULL(hWindow);
+	
+	//获取进程pid
+	GetWindowThreadProcessId(hWindow, &pid);
+	ASSERT_HANDLE_NULL(pid);
+
+	//获取进程句柄
+	proHandle = OpenProcess(PROCESS_ALL_ACCESS,FALSE,pid);
+	ASSERT_HANDLE_NULL(proHandle);
+
+
+	//获取进程首地址
+	int rv = mem_GetProcessAddr(pid,baseAddr);
+	if(rv != 0){
+		return rv ;
+	}
+	KillTimer(TIMER_CONNECT_PROCESS);
+	MessageBox("连接目标进程成功！",NULL,MB_OK);
 	return 0;
 }
 void CCSHelperDlg::OnOk(){
@@ -163,9 +221,17 @@ void CCSHelperDlg::OnTimer(UINT_PTR nIDEvent){
 		case TIMER_LOCK_HEALTH:
 			func_LockHealth();
 			break;
+		case TIMER_CONNECT_PROCESS:
+			func_ConnectPro();
+			break;
+
 		default:
 			break;
 	}
 
 	return;
+}
+void CCSHelperDlg::OnBnClickedBtnStart()
+{
+	SetTimer(TIMER_CONNECT_PROCESS,ELAPSE_TIMER_500MS,NULL);
 }

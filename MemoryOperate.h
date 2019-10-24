@@ -33,3 +33,7 @@ int mem_ReadBlock(IN HANDLE proHandle,IN DWORD baseAddr,IN list<DWORD> &offSetLi
  *	±¸×¢: 
  */
 int mem_WriteBlock(IN HANDLE proHandle,IN DWORD baseAddr,IN list<DWORD> &offSetList,IN DWORD WriteLen, IN BYTE *InBuffer,OUT ULONG* WrittenLen);
+
+
+
+int  mem_GetProcessAddr(DWORD dwPID, DWORD& baseAddr);

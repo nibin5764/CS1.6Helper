@@ -36,8 +36,12 @@ protected:
 private:
 	BOOL IsLockHealth;
 	HANDLE proHandle;			//目标进程句柄
+	DWORD pid;
+	HWND hWindow;
+	DWORD baseAddr;				//目标进程基址
 	int func_LockHealth();
-
+	int func_ConnectPro();
 public:
 	afx_msg void OnBnClickedBtnLockHealth();
+	afx_msg void OnBnClickedBtnStart();
 };

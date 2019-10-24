@@ -5,6 +5,14 @@
 	return FALSE; \
 } 
 
+
+#define ASSERT_HANDLE_NULL(handle) if((handle)==NULL) \
+{ \
+	MessageBox("连接目标进程失败",NULL,MB_OK|MB_ICONERROR);	\
+	return FALSE; \
+} 
+
+
 int HexStrTobyte(char *str, unsigned char *out, unsigned int *outlen);
 
 int  byteToHexStr(unsigned char byte_arr[],int arr_len, char* HexStr,int* HexStrLen);
