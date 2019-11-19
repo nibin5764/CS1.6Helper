@@ -35,7 +35,7 @@ protected:
 
 private:
 	BOOL IsLockHealth;
-	HANDLE proHandle;			//目标进程句柄
+	HANDLE hProcess;			//目标进程句柄
 	DWORD pid;
 	HWND hWindow;
 	DWORD baseAddr;				//目标进程基址
@@ -44,4 +44,6 @@ private:
 public:
 	afx_msg void OnBnClickedBtnLockHealth();
 	afx_msg void OnBnClickedBtnStart();
+	afx_msg void OnBnClickedBtnInjectTest();
+	afx_msg void OnBnClickedBtnInjectCancle();
 };

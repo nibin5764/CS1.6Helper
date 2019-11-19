@@ -18,3 +18,7 @@ int HexStrTobyte(char *str, unsigned char *out, unsigned int *outlen);
 int  byteToHexStr(unsigned char byte_arr[],int arr_len, char* HexStr,int* HexStrLen);
 
 int Reverse4Byte(BYTE* _4Byte);
+
+int IntTo4Bytes(IN int iValue ,OUT BYTE* _4Byte);
+
+int BytesToInt(IN BYTE* _4Byte ,OUT int &iValue);

@@ -59,3 +59,20 @@ int Reverse4Byte(BYTE* _4Byte){
 	_4Byte[1] ^= _4Byte[2];
 	return 0;
 }
+
+int IntTo4Bytes(int iValue ,BYTE* _4Byte){
+	_4Byte[0] = (unsigned char)(iValue&0xFF);
+	_4Byte[1] = (unsigned char)(iValue>>8 &0xFF);
+	_4Byte[2] = (unsigned char)(iValue>>16 &0xFF);
+	_4Byte[3] = (unsigned char)(iValue>>24 &0xFF);
+	return 0;
+}
+
+int BytesToInt(IN BYTE* _4Byte ,OUT int &iValue){
+	iValue = 0;
+	iValue += _4Byte[0];
+	iValue += _4Byte[1]<<8;
+	iValue += _4Byte[2]<<16;
+	iValue += _4Byte[3]<<24;
+	return 0;
+}

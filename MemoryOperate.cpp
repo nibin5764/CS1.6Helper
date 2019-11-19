@@ -96,3 +96,51 @@ int  mem_GetProcessAddr(DWORD dwPID, DWORD& baseAddr)
 	CloseHandle(hModuleSnap);
 	return  HELPER_ERROR_SUCCESS;
 }
+
+
+//ÌáÈ¨º¯Êý
+
+BOOL mem_SetPrivilege(LPCTSTR lpszPrivilege, BOOL bEnablePrivilege){
+	TOKEN_PRIVILEGES tp;
+	HANDLE hToken;
+	LUID luid;
+	if (!OpenProcessToken(GetCurrentProcess(),
+		TOKEN_ADJUST_PRIVILEGES | TOKEN_QUERY,
+		&hToken)){
+			printf("OpenProcessToken error: %u\n", GetLastError());
+			return FALSE;
+	}
+
+	if (!LookupPrivilegeValue(NULL,           // lookup privilege on local system
+		lpszPrivilege,  // privilege to lookup
+		&luid))        // receives LUID of privilege
+	{
+		printf("LookupPrivilegeValue error: %u\n", GetLastError());
+		return FALSE;
+	}
+
+	tp.PrivilegeCount = 1;
+	tp.Privileges[0].Luid = luid;
+	if (bEnablePrivilege)
+		tp.Privileges[0].Attributes = SE_PRIVILEGE_ENABLED;
+	else{
+		tp.Privileges[0].Attributes = 0;
+	}
+
+	// Enable the privilege or disable all privileges.
+	if (!AdjustTokenPrivileges(hToken,
+		FALSE,
+		&tp,
+		sizeof(TOKEN_PRIVILEGES),
+		(PTOKEN_PRIVILEGES)NULL,
+		(PDWORD)NULL)){
+			printf("AdjustTokenPrivileges error: %u\n", GetLastError());
+			return FALSE;
+	}
+
+	if (GetLastError() == ERROR_NOT_ALL_ASSIGNED){
+		printf("The token does not have the specified privilege. \n");
+		return FALSE;
+	}
+	return TRUE;
+}

@@ -53,6 +53,8 @@ BEGIN_MESSAGE_MAP(CCSHelperDlg, CDialog)
 	//}}AFX_MSG_MAP
 	ON_BN_CLICKED(IDC_BTN_LOCK_HEALTH, &CCSHelperDlg::OnBnClickedBtnLockHealth)
 	ON_BN_CLICKED(IDC_BTN_START, &CCSHelperDlg::OnBnClickedBtnStart)
+	ON_BN_CLICKED(IDC_BTN_INJECT_TEST, &CCSHelperDlg::OnBnClickedBtnInjectTest)
+	ON_BN_CLICKED(IDC_BTN_INJECT_CANCLE, &CCSHelperDlg::OnBnClickedBtnInjectCancle)
 END_MESSAGE_MAP()
 
 
@@ -72,6 +74,15 @@ BOOL CCSHelperDlg::OnInitDialog()
 // 	ASSERT_EQUAL_REG(RegSuccess,FALSE);
 // 	RegSuccess =  RegisterHotKey(this->GetSafeHwnd(),MHK_F11,0,VK_F11);
 // 	ASSERT_EQUAL_REG(RegSuccess,FALSE);
+	
+	
+	
+	if (!mem_SetPrivilege(SE_DEBUG_NAME, TRUE)){
+		return 1;
+	}
+		
+	OnBnClickedBtnStart();
+	
 	return TRUE;  // 除非将焦点设置到控件，否则返回 TRUE
 }
 
@@ -159,7 +170,7 @@ int CCSHelperDlg::func_LockHealth(){
 	list<DWORD> wlist;
 	wlist.push_back(0x1651A0);
 	wlist.push_back(0x78);
-	rv = mem_WriteBlock(proHandle,baseAddr,wlist,4,ReadBuffer,&ReadddLen);
+	rv = mem_WriteBlock(hProcess,baseAddr,wlist,4,ReadBuffer,&ReadddLen);
 	if(rv != 0){
 		return rv;
 	}
@@ -177,8 +188,8 @@ int CCSHelperDlg::func_ConnectPro(){
 	ASSERT_HANDLE_NULL(pid);
 
 	//获取进程句柄
-	proHandle = OpenProcess(PROCESS_ALL_ACCESS,FALSE,pid);
-	ASSERT_HANDLE_NULL(proHandle);
+	hProcess = OpenProcess(PROCESS_ALL_ACCESS,FALSE,pid);
+	ASSERT_HANDLE_NULL(hProcess);
 
 
 	//获取进程首地址
@@ -234,4 +245,90 @@ void CCSHelperDlg::OnTimer(UINT_PTR nIDEvent){
 void CCSHelperDlg::OnBnClickedBtnStart()
 {
 	SetTimer(TIMER_CONNECT_PROCESS,ELAPSE_TIMER_500MS,NULL);
+}
+
+void InjFunc(){  
+	_asm{
+		add dword ptr[esi+0x78],05
+		add dword ptr[esi+0x78],04
+	}
+}
+
+
+void CCSHelperDlg::OnBnClickedBtnInjectTest()
+{
+	//   1.申请空间   2.新空间注入代码  3.原位置注入跳转代码
+
+	//保存初始机器码
+	//此处有9个字节两个指令，因为第一条指令只有4个字节，而跳转指令需要5个字节，所以这里占用两个指令的位置，后面在新地址中将要返回的时候要把此处的第二条指令拼接上
+	list<DWORD> mlist;
+	DWORD OldAddr = 0x1332;
+	mlist.push_back(OldAddr);
+	BYTE OldCode[10] = {0};
+	ULONG ReadddLen = sizeof(OldCode);
+	int rv = mem_ReadBlock(hProcess,baseAddr,mlist,9,OldCode,&ReadddLen);		
+	if(rv != 0){
+		return;
+	}
+
+	//申请虚拟地址空间
+	LPVOID virAddr = NULL;
+	if (!(virAddr = VirtualAllocEx(hProcess,NULL,64,MEM_COMMIT, PAGE_EXECUTE_READWRITE))){
+		CString ErrMsg;
+		ErrMsg.Format("VirtualAllocEx() failed :err_code=%d/n", GetLastError());
+		MessageBox(ErrMsg,NULL,MB_OK);
+		return ;
+	}
+
+	//虚拟地址空间内写入新的机器码
+	BYTE NewCode[128];
+	memcpy(NewCode,(void*)((char*)InjFunc+3),8);
+	//memset(NewCode,0x90,8);
+	
+	//计算新的偏移
+	int oldOffset,newOffset;
+	BytesToInt(OldCode+5,oldOffset);
+	newOffset = baseAddr + OldAddr + 9  + oldOffset - (DWORD)virAddr - 13;
+	BYTE bnewOffset[4];
+	IntTo4Bytes(newOffset,bnewOffset);
+	memcpy(NewCode+8,OldCode + 4,1);
+	memcpy(NewCode+9,bnewOffset,4);
+	//将原来的第二条指令放在操作之后
+
+	DWORD returnAddr = baseAddr + OldAddr +9;	
+	DWORD returnOffset = returnAddr - (DWORD)virAddr -18 ;
+	BYTE  ByteReturnAddr[4];
+	IntTo4Bytes(returnOffset,ByteReturnAddr);
+	NewCode[13] = 0xE9;
+	memcpy(NewCode+14,ByteReturnAddr,4);
+
+
+	//8个字节汇编操作码，5个字节是复原跳转前的指令，5个字节跳转回去，一共18个字节
+	if (!(WriteProcessMemory(hProcess, virAddr, (LPVOID)((char*)NewCode), 18, NULL))){
+		printf("Write ThreadProc to Memory failed :err_code=%d/n", GetLastError());
+		return ;
+	}
+
+	//把原来的指令改成 跳转指令 跳转地址为virAddr
+	DWORD jmpOffset = (DWORD)virAddr - (baseAddr +0x1332 +5);
+	BYTE ByteOffset[4];
+	IntTo4Bytes(jmpOffset,ByteOffset);
+	BYTE JmpToNewCode[9] = {0};
+	JmpToNewCode[0] = 0xE9;			//jmp指令
+	memcpy(JmpToNewCode+1,ByteOffset,4);
+	memset(JmpToNewCode+5,0x90,4);	//用nop补全
+	
+
+	ULONG WrittenLen = sizeof(JmpToNewCode);
+	rv = mem_WriteBlock(hProcess,baseAddr,mlist,9,JmpToNewCode,&WrittenLen);
+	if(rv != 0){
+		return ;
+	}
+
+}
+
+
+void CCSHelperDlg::OnBnClickedBtnInjectCancle()
+{
+	// TODO: 在此添加控件通知处理程序代码
 }

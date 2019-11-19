@@ -37,3 +37,6 @@ int mem_WriteBlock(IN HANDLE proHandle,IN DWORD baseAddr,IN list<DWORD> &offSetL
 
 
 int  mem_GetProcessAddr(DWORD dwPID, DWORD& baseAddr);
+
+
+BOOL mem_SetPrivilege(LPCTSTR lpszPrivilege, BOOL bEnablePrivilege);
